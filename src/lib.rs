@@ -1,10 +1,85 @@
 //use std::os::ios::raw::stat;
+use std::{env, fs};
+use std::fmt::Error;
+use std::collections::HashMap;
+
+fn init_hashtable() -> HashMap<&'static str,&'static str> {
+    let mut table = HashMap::new();
+    table.insert("begin","beginsym");
+    table.insert("call","callsym");
+    table.insert("const","constsym");
+    table.insert("do","dosym");
+    table.insert("end","endsym");
+    table.insert("if","ifsym");
+    table.insert("odd","oddsym");
+    table.insert("procedure","proceduresym");
+    table.insert("read","readsym");
+    table.insert("then","thensym");
+    table.insert("var","varsym");
+    table.insert("while","whilesym");
+    table.insert("write","writesym");
+    table.insert("+","plus");
+    table.insert("-","minus");
+    table.insert("*","times");
+    table.insert("/","slash");
+    table.insert("=","eql");
+    table.insert("#","neq");
+    table.insert("<","lss");
+    table.insert("<=","leq");
+    table.insert(">","gtr");
+    table.insert(">=","geq");
+    table.insert(":=","becomes");
+    table.insert("(","lparen");
+    table.insert(")","rparen");
+    table.insert(",","comma");
+    table.insert(";","semicolon");
+    table.insert(".","period");
+
+    table
+}
+
+pub fn recognize_words(words:Vec<String>) -> Vec<(String,String)>{
+    let table = init_hashtable();
+
+//    println!("{:?}",words);
+
+    words.into_iter()
+        .map(|x| {
+            match table.get(x.as_str()) {
+                Some(value) => (value.to_string(),x),
+                None => {
+                    let value = match x.parse::<i32>(){
+                        Ok(_) => String::from("number"),
+                        Err(_) => String::from("ident")
+                    };
+                    (value, x)
+                }
+            }
+        })
+        .collect()
+}
+
+pub fn get_file_to_string(mut args: env::Args) -> Result<String,&'static str> {
+    args.next();
+    let filename = match args.next() {
+        Some(arg) => arg,
+        None => return Err("Didn't get a filename")
+    };
+
+    let content = fs::read_to_string(filename)
+        .expect("Failed to read file.");
+
+    Ok(content)
+
+}
 
 fn split_others(other:String) -> Vec<String> {
     //to solve the condition where two delimiters or operates attach to each other when they are not "<=",">=",":="or"==".
     let mut result= Vec::new();
     if other != "<=" && other != ">=" && other != ":=" && other != "==" {
         result = other.chars().map(|x| x.to_string()).collect();
+    } else {
+        result.push(other);
     }
 
     result
@@ -71,7 +146,6 @@ pub fn split_words(contents:String) -> Vec<String> {
                     for item in split_others(word) {
                         words.push(item);
                     }
-
 //                    words.push(word);
                     word = String::new();
                 }
@@ -84,6 +158,9 @@ pub fn split_words(contents:String) -> Vec<String> {
         .filter(|x| x.len() != 0)
         .map(|x| x.to_lowercase())
         .collect();
+
+    println!("{:?}",words);
+
     words
 }
 
@@ -106,17 +183,6 @@ End.\n" );
         let output = split_words(contents);
 
         assert_eq!(output_right, output);
-
-    }
-
-    #[test]
-    fn experiment() {
-        let a = String::from("test");
-        let b = String::from("test");
-        let c = String::from("not test");
-        assert_eq!(a,b);
-        assert_eq!(a,c);
-        assert_eq!(b,c);
 
     }
 

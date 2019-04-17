@@ -1,36 +1,31 @@
 use std::collections::HashMap;
 use std::{env, fs};
 use std::hash::Hash;
-use PL0_Compiler_Rust::split_words;
+use PL0_Compiler_Rust;
+use std::process;
+use PL0_Compiler_Rust::recognize_words;
 
 
 fn main() {
-
     let reserved_words = vec!["begin","call","const","do","end","if","odd",
         "procedure","read","then","var","while","write",
         "(",")",",",";",".",
         "+","-","*","/","=","#","<","<=",">",">=",":="];
 
     let reserved_words:Vec<String> = reserved_words.into_iter().map(|x| String::from(x)).collect();
-//
+
 //    let operator = vec!["+","-","*","/","=","#","<","<=",">",">=",":="];
-//
 //    let delimiter = vec!["(",")",",",";","."];
 
-//    let test_words = String::from("Test just try");
-    let mut args = env::args();
+    let args = env::args();
 
-    if args.len() < 2 {
-        panic!("Not enough arguments!");
-    }
+    let content = PL0_Compiler_Rust::get_file_to_string(args)
+        .unwrap_or_else(|err| {
+            eprintln!("Problem when getting string from file: {}",err);
+            process::exit(1);
+        });
 
-    args.next();
-    let filename = args.next()
-        .expect("Failed to init filename");
-
-    let content = fs::read_to_string(filename)
-        .expect("Failed to open file");
-    let words = split_words(content);
+    let words = PL0_Compiler_Rust::split_words(content);
 
     let words_except_number:Vec<String> = words.clone().into_iter()
         .filter(|x| {
@@ -52,12 +47,17 @@ fn main() {
         }
     }
 
-    let mut i = 0;
-    for (key, value) in counter {
-        println!("{}:({},{})",i,key,value);
-        i+=1;
-    }
+//    let mut i = 0;
+//    for (key, value) in counter {
+//        println!("({},{})",key,value);
+//        i+=1;
+//    }
 
+    let words_with_name = recognize_words(words.clone());
+
+    for word in words_with_name {
+        println!("({},{})",word.0,word.1);
+    }
 
 //    println!("{:?}",a);
 
