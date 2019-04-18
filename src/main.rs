@@ -1,10 +1,10 @@
 use std::collections::HashMap;
 use std::{env, fs};
 use std::hash::Hash;
-use PL0_Compiler_Rust;
 use std::process;
-use PL0_Compiler_Rust::recognize_words;
 
+mod token;
+mod read_file;
 
 fn main() {
     let reserved_words = vec!["begin","call","const","do","end","if","odd",
@@ -19,13 +19,13 @@ fn main() {
 
     let args = env::args();
 
-    let content = PL0_Compiler_Rust::get_file_to_string(args)
+    let content = read_file::get_file_to_string(args)
         .unwrap_or_else(|err| {
             eprintln!("Problem when getting string from file: {}",err);
             process::exit(1);
         });
 
-    let words = PL0_Compiler_Rust::split_words(content);
+    let words = token::split_words(content);
 
     let words_except_number:Vec<String> = words.clone().into_iter()
         .filter(|x| {
@@ -53,11 +53,12 @@ fn main() {
 //        i+=1;
 //    }
 
-    let words_with_name = recognize_words(words.clone());
+    let words_with_name = token::recognize_words(words.clone());
 
     for word in words_with_name {
         println!("({},{})",word.0,word.1);
     }
+
 
 //    println!("{:?}",a);
 

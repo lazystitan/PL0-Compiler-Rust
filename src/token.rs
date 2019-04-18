@@ -1,5 +1,3 @@
-//use std::os::ios::raw::stat;
-use std::{env, fs};
 use std::fmt::Error;
 use std::collections::HashMap;
 
@@ -57,20 +55,6 @@ pub fn recognize_words(words:Vec<String>) -> Vec<(String,String)>{
             }
         })
         .collect()
-}
-
-pub fn get_file_to_string(mut args: env::Args) -> Result<String,&'static str> {
-    args.next();
-    let filename = match args.next() {
-        Some(arg) => arg,
-        None => return Err("Didn't get a filename")
-    };
-
-    let content = fs::read_to_string(filename)
-        .expect("Failed to read file.");
-
-    Ok(content)
-
 }
 
 fn split_others(other:String) -> Vec<String> {
@@ -203,5 +187,6 @@ End.\n" );
                 String::from(";"),
             ]);
     }
+
 
 }
