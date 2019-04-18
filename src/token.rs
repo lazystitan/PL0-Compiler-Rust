@@ -1,6 +1,12 @@
 use std::fmt::Error;
 use std::collections::HashMap;
 
+
+static LETTERS:[char;52] = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z',
+    'A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z'];
+
+static NUMBER:[char;10] = ['0','1','2','3','4','5','6','7','8','9'];
+
 fn init_hashtable() -> HashMap<&'static str,&'static str> {
     let mut table = HashMap::new();
     table.insert("begin","beginsym");
@@ -39,8 +45,6 @@ fn init_hashtable() -> HashMap<&'static str,&'static str> {
 pub fn recognize_words(words:Vec<String>) -> Vec<(String,String)>{
     let table = init_hashtable();
 
-//    println!("{:?}",words);
-
     words.into_iter()
         .map(|x| {
             match table.get(x.as_str()) {
@@ -48,7 +52,12 @@ pub fn recognize_words(words:Vec<String>) -> Vec<(String,String)>{
                 None => {
                     let value = match x.parse::<i32>(){
                         Ok(_) => String::from("number"),
-                        Err(_) => String::from("ident")
+                        Err(_) => {
+                            match ident(&x) {
+                                Ok(ident) => ident,
+                                Err(_) => String::from("invalid")
+                            }
+                        }
                     };
                     (value, x)
                 }
@@ -149,6 +158,39 @@ pub fn split_words(contents:String) -> Vec<String> {
 }
 
 
+fn ident(word: &String) -> Result<String,&'static str> {
+    enum Status {
+        Start,
+        End
+    }
+
+    let mut status = Status::Start;
+
+    for tchar in word.chars() {
+        match status {
+            Status::Start => {
+                if LETTERS.contains(&tchar) {
+                    status = Status::End;
+                } else {
+                    return Err("is not an ident!")
+                }
+            },
+            Status::End => {
+                if LETTERS.contains(&tchar) {
+                    continue;
+                } else if NUMBER.contains(&tchar){
+                    continue;
+                } else {
+                    return Err("is not an ident!")
+                }
+            }
+        }
+    }
+
+    Ok((String::from("ident")))
+}
+
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -188,5 +230,35 @@ End.\n" );
             ]);
     }
 
+    #[test]
+    fn ident_test() {
+        let words = vec!["abcd0","_eprint", "leters" ,"0what", "carse0001"];
+        let mut result = Vec::new();
+        for word in words {
+            let token = ident(&word.to_string()).unwrap_or_else(|x| {
+                eprintln!("{} {}",word,x);
+                "Invalid".to_string()
+            });
+            result.push(token);
+        }
+        assert_eq!(vec![
+            "ident".to_string(),
+            "Invalid".to_string(),
+            "ident".to_string() ,
+            "Invalid".to_string(),
+            "ident".to_string()
+        ],
+            result
+        );
 
+        assert_ne!(vec![
+            "ident".to_string(),
+            "Invalid".to_string(),
+            "Invalid".to_string() ,
+            "Invalid".to_string(),
+            "ident".to_string()
+        ],
+                   result
+        );
+    }
 }

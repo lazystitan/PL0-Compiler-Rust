@@ -1,5 +1,5 @@
 const a = 100;
-var b,c;
+var b,c,_cc;
 begin
     read(b);
     c:=a+b;

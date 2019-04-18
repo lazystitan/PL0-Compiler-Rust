@@ -36,8 +36,6 @@ fn main() {
             not_number
         }).collect();
 
-//    println!("{:?}",words);
-
     let mut counter = HashMap::new();
 
     for word in words_except_number {
@@ -47,21 +45,9 @@ fn main() {
         }
     }
 
-//    let mut i = 0;
-//    for (key, value) in counter {
-//        println!("({},{})",key,value);
-//        i+=1;
-//    }
-
     let words_with_name = token::recognize_words(words.clone());
 
     for word in words_with_name {
         println!("({},{})",word.0,word.1);
     }
-
-
-//    println!("{:?}",a);
-
-
-
 }

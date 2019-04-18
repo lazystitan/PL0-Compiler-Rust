@@ -7,8 +7,10 @@ pub fn get_file_to_string(mut args: env::Args) -> Result<String,&'static str> {
         None => return Err("Didn't get a filename")
     };
 
-    let content = fs::read_to_string(filename)
-        .expect("Failed to read file.");
+    let content = match fs::read_to_string(filename) {
+        Ok(value) => value,
+        Err(_) => return Err("Failed to read file.")
+    };
 
     Ok(content)
 
