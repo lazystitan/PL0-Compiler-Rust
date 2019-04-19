@@ -3,18 +3,42 @@ use std::vec;
 
 use crate::token;
 
-fn parse_expression_b(words: &mut token::Words) -> bool {
-//    println!("parse_expression_b!");
-    let mut flag = parse_add(words);
-    if flag {
-        flag = parse_term(words);
-        if flag {
+
+pub fn syntax_analysis(words:&mut token::Words) {
+    if top_level_expression(words) {
+        println!("语法正确");
+    } else {
+        println!("语法错误:第{}字符'{}'非法",words.get_pointer()+1,words.get_next_word().unwrap());
+    }
+}
+
+fn top_level_expression(words: &mut token::Words) -> bool {
+    if parse_expression(words) {
+        if words.is_finished() {
             true
         } else {
             false
         }
     } else {
+        false
+    }
+}
+
+fn parse_expression_b(words: &mut token::Words) -> bool {
+    println!("parse_expression_b!");
+    let mut flag = parse_add(words);
+    if flag {
+        println!("add more");
+        flag = parse_term(words);
+        if flag {
+            parse_expression_b(words)
+        } else {
+            false
+        }
+    } else {
+        words.is_finished();
         words.set_pointer_to_previous();
+        println!("no add more");
         true
     }
 
@@ -22,37 +46,44 @@ fn parse_expression_b(words: &mut token::Words) -> bool {
 }
 
 fn parse_expression(words: &mut token::Words) -> bool {
-//    println!("parse_expression!");
+    println!("parse_expression!");
     let has_add = parse_add(words);
 
     if !has_add {
+        println!("no add symbol");
         words.set_pointer_to_previous();
     }
 
     if !parse_term(words) {
+        println!("add symbol exist");
         return false
     }
-    parse_expression_b(words)
+    let result = parse_expression_b(words);
+    println!("expression_b finished");
+
+    result
 }
 
 fn parse_term_b(words:&mut token::Words) -> bool {
-//    println!("parse_term_b!");
+    println!("parse_term_b!");
     let mut flag = parse_times(words);
     if flag {
+        println!("times symbol exist");
         flag = parse_factor(words);
         if flag {
-            true
+            parse_term_b(words)
         } else {
             false
         }
     } else {
+        println!("times symbol not exist");
         words.set_pointer_to_previous();
         true
     }
 }
 
 fn parse_term(words:&mut token::Words) -> bool {
-//    println!("parse_term!");
+    println!("parse_term!");
     let flag = parse_factor(words);
     if flag {
         parse_term_b(words)
@@ -62,45 +93,37 @@ fn parse_term(words:&mut token::Words) -> bool {
 }
 
 fn parse_factor(words:&mut token::Words) -> bool {
-//    println!("parse_factor!");
-    let symbol = words.get_next_word();
+    println!("parse_factor!");
 //    println!("{:?}",symbol);
-    match symbol {
-        Some(symbol) => {
-            match token::parse_ident(symbol) {
-                Ok(_) => true,
-                Err(_) => match token::parse_number(symbol) {
-                    Ok(_) => true,
-                    Err(_) => {
-                        if symbol != "(" {
-                            return false
-                        }
-                        if  parse_expression(words) {
-                            let symbol = words.get_next_word();
-                            match symbol {
-                                Some(symbol) => {
-                                    if symbol != ")" {
-                                        false
-                                    } else {
-                                        true
-                                    }
-                                },
-                                None => false
-                            }
-                        } else {
-                            false
-                        }
 
-                    }
-                }
+    if let Some(symbol) = words.get_next_word(){
+        println!("{}",symbol);
+        if let Ok(_) = token::parse_ident(symbol) {
+            return true;
+        } else if let Ok(_) = token::parse_number(symbol){
+            return true;
+        } else if symbol != "(" {
+            return false;
+        } else if !parse_expression(words) {
+            return false;
+        } else if let Some(symbol) = words.get_next_word() {
+            if symbol == ")" {
+                println!("right bracket");
+                return true;
+            } else {
+                return false;
             }
-        },
-        None => false
+        } else {
+            println!("no matched");
+            return false;
+        }
+    } else {
+        false
     }
 }
 
 fn parse_times(words:&mut token::Words) -> bool{
-//    println!("parse_times!");
+    println!("parse_times!");
     let symbol =  words.get_next_word();
     match symbol {
         Some(symbol) => {
@@ -115,7 +138,7 @@ fn parse_times(words:&mut token::Words) -> bool{
 }
 
 fn parse_add(words:&mut token::Words) -> bool{
-//    println!("parse_add!");
+    println!("parse_add!");
     let symbol =  words.get_next_word();
     match symbol {
         Some(symbol) => {
@@ -129,13 +152,6 @@ fn parse_add(words:&mut token::Words) -> bool{
     }
 }
 
-pub fn syntax_analysis(words:&mut token::Words) {
-    if parse_expression(words) {
-        println!("语法正确");
-    } else {
-        println!("语法错误:第{}字符'{}'非法",words.get_pointer()+1,words.get_current_word().unwrap());
-    }
-}
 
 #[cfg(test)]
 mod test {
@@ -187,10 +203,36 @@ mod test {
     fn parse_expression_test() {
         let content = String::from("(12+5)//8+(a+5)*b");
         let mut words = token::split_words(content);
-        let flag = parse_expression(&mut words);
-        println!("{}-{}",words.get_pointer(),flag);
+        let mut flag = top_level_expression(&mut words);
+        println!("test1 done");
+        println!();
 
         assert_eq!(flag,false);
+
+        let content = String::from("12+number1/x+34+(u+16*3+12)");
+        let mut words = token::split_words(content);
+        let mut flag = top_level_expression(&mut words);
+//        println!("{}-{}",words.get_pointer(),flag);
+        println!("test2 done: 12+number1/x+34+(u+16*3+12)");
+
+        assert_eq!(flag,true);
+
+        let content = String::from("12=number1/x+34(u+16*3+12)");
+        let mut words = token::split_words(content);
+        let mut flag = top_level_expression(&mut words);
+//        println!("{}-{}",words.get_pointer(),flag);
+        println!("test3 done:12=number1/x+34(u+16*3+12)");
+
+        assert_eq!(flag,false);
+
+        let content = String::from("12+number1/x+34(u+16*3+12");
+        let mut words = token::split_words(content);
+        let mut flag = top_level_expression(&mut words);
+//        println!("{}-{}",words.get_pointer(),flag);
+        println!("test4 done");
+
+        assert_eq!(flag,false);
+
     }
 
     #[test]
@@ -208,7 +250,7 @@ mod test {
 
     #[test]
     fn syntax_analysis_test() {
-        let content = String::from("(12+5)//8+(a+5)*b");
+        let content = String::from("12=number1/x+34(u+16*3+12)");
         let mut words = token::split_words(content);
         syntax_analysis(&mut words);
 

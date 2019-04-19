@@ -26,7 +26,9 @@ impl Words {
             Some(word) => {
                 Some(word)
             },
-            None => None
+            None => {
+                None
+            }
         }
     }
 
@@ -40,6 +42,15 @@ impl Words {
 
     pub fn get_all_words(&self) -> Vec<String> {
         (*self.words).clone()
+    }
+
+    pub fn is_finished(&self) -> bool {
+        println!("position is {} now",self.pointer);
+        if self.pointer == (self.words.len()-1) as i32 {
+            true
+        } else {
+            false
+        }
     }
 }
 
@@ -276,7 +287,7 @@ End.\n" );
 
         let output = split_words(contents);
 
-        assert_eq!(output_right, output);
+        assert_eq!(output_right, output.get_all_words());
 
     }
 
