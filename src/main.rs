@@ -1,10 +1,9 @@
 use std::collections::HashMap;
-use std::{env, fs};
-use std::hash::Hash;
-use std::process;
+use std::{process, env};
 
 mod token;
 mod read_file;
+mod syntax;
 
 fn main() {
     let reserved_words = vec!["begin","call","const","do","end","if","odd",
@@ -25,29 +24,17 @@ fn main() {
             process::exit(1);
         });
 
-    let words = token::split_words(content);
+    let mut words = token::split_words(content);
 
-    let words_except_number:Vec<String> = words.clone().into_iter()
-        .filter(|x| {
-            let not_number = match x.parse::<i32>(){
-                Ok(_) => false,
-                Err(_) => true
-            };
-            not_number
-        }).collect();
-
-    let mut counter = HashMap::new();
-
-    for word in words_except_number {
-        if !reserved_words.contains(&word){
-            let count = counter.entry(word).or_insert(0);
-            *count+=1;
-        }
-    }
-
-    let words_with_name = token::recognize_words(words.clone());
+    let words_with_name = token::recognize_words(words.get_all_words())
+        .unwrap_or_else(|e| {
+            eprintln!("Error when recognize words: {}",e);
+            process::exit(1);
+        });
 
     for word in words_with_name {
-        println!("({},{})",word.0,word.1);
+        println!("({: ^8},{: ^8})",word.0,word.1);
     }
+
+    syntax::syntax_analysis(&mut words);
 }

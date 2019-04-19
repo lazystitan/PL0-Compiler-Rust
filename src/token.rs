@@ -1,5 +1,47 @@
-use std::fmt::Error;
 use std::collections::HashMap;
+
+pub struct Words {
+    pointer:i32,
+    words:Box<Vec<String>>,
+}
+
+impl Words {
+    pub fn new(content:Vec<String>) -> Words{
+        Words {
+            pointer:-1,
+            words:Box::new(content)
+        }
+    }
+
+    pub fn get_current_word(&self) -> Option<&String> {
+        match self.words.get(self.pointer as usize) {
+            Some(word) => Some(word),
+            None => None
+        }
+    }
+
+    pub fn get_next_word(&mut self) -> Option<&String> {
+        self.pointer += 1;
+        match self.words.get(self.pointer as usize) {
+            Some(word) => {
+                Some(word)
+            },
+            None => None
+        }
+    }
+
+    pub fn set_pointer_to_previous(&mut self) {
+        self.pointer -= 1;
+    }
+
+    pub fn get_pointer(&self) -> i32 {
+        return self.pointer
+    }
+
+    pub fn get_all_words(&self) -> Vec<String> {
+        (*self.words).clone()
+    }
+}
 
 
 static LETTERS:[char;52] = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z',
@@ -42,32 +84,43 @@ fn init_hashtable() -> HashMap<&'static str,&'static str> {
     table
 }
 
-pub fn recognize_words(words:Vec<String>) -> Vec<(String,String)>{
+pub fn recognize_words(words:Vec<String>) -> Result<Vec<(String,String)>,String>{
     let table = init_hashtable();
 
-    words.into_iter()
-        .map(|x| {
+    let pre = words.into_iter();
+
+    let mut result= Vec::new();
+
+    for x in pre {
             match table.get(x.as_str()) {
-                Some(value) => (value.to_string(),x),
+                Some(value) => result.push((value.to_string(),x)),
+
                 None => {
-                    let value = match x.parse::<i32>(){
-                        Ok(_) => String::from("number"),
+                    //not reserve word
+                    let value = match parse_number(&x){
+                        Ok(number) => number,
                         Err(_) => {
-                            match ident(&x) {
+                            //not a number
+                            match parse_ident(&x) {
                                 Ok(ident) => ident,
-                                Err(_) => String::from("invalid")
+                                Err(_) =>
+                                    return Err(
+                                        ("Invalid word ".to_string()+&x+" exist!").to_string()
+                                    )
                             }
                         }
                     };
-                    (value, x)
+                    result.push((value, x));
                 }
             }
-        })
-        .collect()
+        };
+
+    Ok(result)
 }
 
 fn split_others(other:String) -> Vec<String> {
-    //to solve the condition where two delimiters or operates attach to each other when they are not "<=",">=",":="or"==".
+    //to solve the condition where two delimiters or operates attach
+    // to each other when they are not "<=",">=",":="or"==".
     let mut result= Vec::new();
     if other != "<=" && other != ">=" && other != ":=" && other != "==" {
         result = other.chars().map(|x| x.to_string()).collect();
@@ -78,7 +131,7 @@ fn split_others(other:String) -> Vec<String> {
     result
 }
 
-pub fn split_words(contents:String) -> Vec<String> {
+pub fn split_words(contents:String) -> Words {
     //using status transform to implement split words
     let delimiter = vec!['(',')',',',';','.','+','-','*','/','=','#','<','=','>',':'];
 
@@ -152,13 +205,13 @@ pub fn split_words(contents:String) -> Vec<String> {
         .map(|x| x.to_lowercase())
         .collect();
 
-    println!("{:?}",words);
+//    println!("{:?}",words);
 
-    words
+    Words::new(words)
 }
 
 
-fn ident(word: &String) -> Result<String,&'static str> {
+pub fn parse_ident(word: &String) -> Result<String,&'static str> {
     enum Status {
         Start,
         End
@@ -187,7 +240,19 @@ fn ident(word: &String) -> Result<String,&'static str> {
         }
     }
 
-    Ok((String::from("ident")))
+    Ok(String::from("ident"))
+}
+
+pub fn parse_number(word: &String) -> Result<String,&'static str>{
+    for number in word.chars() {
+        if NUMBER.contains(&number) {
+            continue;
+        } else {
+            return Err("is not a number");
+        }
+    }
+
+    Ok(String::from("number"))
 }
 
 
@@ -203,8 +268,11 @@ Const num2 = 4;\n\
 Begin\n
     a1 := b1 + num2;\n\
 End.\n" );
-        let output_right = vec!["var","num","=","3",";","const","num2","=","4",";","begin","a1",":=","b1","+","num2",";","end","."];
-        let output_right:Vec<String> = output_right.iter().map(|x| String::from(*x)).collect();
+        let output_right = vec!["var","num","=","3",";","const","num2","=","4",";",
+                                "begin","a1",":=","b1","+","num2",";","end","."];
+        let output_right:Vec<String> = output_right.iter()
+            .map(|x| String::from(*x))
+            .collect();
 
         let output = split_words(contents);
 
@@ -235,7 +303,8 @@ End.\n" );
         let words = vec!["abcd0","_eprint", "leters" ,"0what", "carse0001"];
         let mut result = Vec::new();
         for word in words {
-            let token = ident(&word.to_string()).unwrap_or_else(|x| {
+            let token = parse_ident(&word.to_string())
+                .unwrap_or_else(|x| {
                 eprintln!("{} {}",word,x);
                 "Invalid".to_string()
             });
