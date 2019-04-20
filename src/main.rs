@@ -4,6 +4,8 @@ use std::{process, env};
 mod token;
 mod read_file;
 mod syntax;
+mod words;
+mod token2;
 
 fn main() {
     let reserved_words = vec!["begin","call","const","do","end","if","odd",

@@ -13,13 +13,6 @@ impl Words {
         }
     }
 
-    pub fn get_current_word(&self) -> Option<&String> {
-        match self.words.get(self.pointer as usize) {
-            Some(word) => Some(word),
-            None => None
-        }
-    }
-
     pub fn get_next_word(&mut self) -> Option<&String> {
         self.pointer += 1;
         match self.words.get(self.pointer as usize) {
@@ -45,7 +38,7 @@ impl Words {
     }
 
     pub fn is_finished(&self) -> bool {
-        println!("position is {} now",self.pointer);
+//        println!("position is {} now",self.pointer);
         if self.pointer == (self.words.len()-1) as i32 {
             true
         } else {
@@ -55,8 +48,10 @@ impl Words {
 }
 
 
-static LETTERS:[char;52] = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z',
-    'A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z'];
+static LETTERS:[char;52] = ['a','b','c','d','e','f','g','h','i','j','k','l','m',
+                            'n','o','p','q','r','s','t','u','v','w','x','y','z',
+                            'A','B','C','D','E','F','G','H','I','J','K','L','M',
+                            'N','O','P','Q','R','S','T','U','V','W','X','Y','Z'];
 
 static NUMBER:[char;10] = ['0','1','2','3','4','5','6','7','8','9'];
 
