@@ -26,7 +26,7 @@ impl Token {
 
 impl fmt::Display for Token {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        write!(f,"({:^8},{:^8})",self.token,self.value)
+        write!(f,"({:^10},{:^8})",self.token,self.value)
     }
 }
 
@@ -37,7 +37,7 @@ pub struct TokenList {
 
 impl TokenList {
     pub fn new(words:Words) -> Result<TokenList,&'static str> {
-        let list = recognize_words(&words);
+        let mut list = recognize_words(&words);
 
 //        println!("{:?}",list);
 
@@ -46,6 +46,9 @@ impl TokenList {
                 return Err("Error accured when transfer to token list");
             }
         }
+
+        list.push(Token{token:"".to_string(),value:"".to_string()});
+
         Ok(TokenList{
             list,
             state:-1
@@ -123,6 +126,7 @@ pub fn recognize_words(words:&Words) -> Vec<Token>{
     let table = init_hashtable();
     words.get_all_words().into_iter()
         .map(|x|{
+            let x = x.to_lowercase();
             match table.get(x.as_str()) {
                 Some(value) => Token::new(value,x.as_str()),
 
@@ -201,20 +205,6 @@ mod test {
         println!("{}",token);
 //        assert!(false);
     }
-
-//    #[test]
-//    fn tokenlist_next_test() {
-//        let mut tokenlist = TokenList::new();
-//        tokenlist.push(Token::new("ident","num"));
-//        tokenlist.push(Token::new("add","+"));
-//
-//        let token = tokenlist.next().unwrap();
-//        println!("{}",token);
-//
-//
-//
-//        assert!(false);
-//    }
 
     #[test]
     fn tokenlist_test() {

@@ -1,11 +1,12 @@
 use std::collections::HashMap;
 use std::{process, env};
 
-mod token;
 mod read_file;
 mod syntax;
 mod words;
 mod token2;
+mod token;
+mod syntax2;
 
 fn main() {
     let reserved_words = vec!["begin","call","const","do","end","if","odd",
@@ -26,17 +27,21 @@ fn main() {
             process::exit(1);
         });
 
-    let mut words = token::split_words(content);
+    let mut words = words::Words::new(content);
 
-    let words_with_name = token::recognize_words(words.get_all_words())
-        .unwrap_or_else(|e| {
-            eprintln!("Error when recognize words: {}",e);
+    let mut tokenlist = token2::TokenList::new(words).unwrap_or_else(
+        |x| {
+            eprintln!("Error:{}",x);
             process::exit(1);
-        });
+        }
+    );
 
-    for word in words_with_name {
-        println!("({: ^8},{: ^8})",word.0,word.1);
+    loop {
+        let token = tokenlist.next();
+        match token {
+            Some(token)=> println!("{}",token),
+            None => break
+        };
     }
 
-    syntax::syntax_analysis(&mut words);
 }

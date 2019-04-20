@@ -4,4 +4,5 @@ Begin
     Read(A1);
     b2:=a1+num;
     write(A1,B2);
+    q*q1/q2;
 End.
